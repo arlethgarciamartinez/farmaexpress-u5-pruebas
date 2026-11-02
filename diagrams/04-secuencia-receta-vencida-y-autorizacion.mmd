@@ -1,0 +1,35 @@
+%%{init: {'theme':'base','themeVariables':{'fontSize':'14px'}}}%%
+sequenceDiagram
+  autonumber
+  actor Cajero
+  actor Resp as Responsable de farmacia
+  participant VMS as VentaMostradorService
+  participant AVS as AutorizacionDeVentaService
+  participant UoW as UnidadDeTrabajo
+  participant Venta as Venta (Aggregate)
+  participant Inv as InventarioDeProducto (Aggregate)
+
+  Note over Cajero,Inv: CU-02 con excepción y alternativa — receta vencida (US-03) / exceso de límite (US-04)
+  Cajero->>VMS: confirmar_cobro(ConfirmarCobro)
+  VMS->>UoW: BEGIN
+  VMS->>Venta: confirmar_cobro(hoy, limites)
+  alt Receta ausente, incompleta o vencida (> 30 días)
+    Venta-->>VMS: ErrorDeDominio (RecetaVencida / RecetaIncompleta / RecetaRequerida)
+    VMS->>Venta: rechazar(motivo)
+    VMS->>UoW: confirmar()  (se conserva el rechazo, NO se toca inventario)
+    VMS-->>Cajero: Resultado.rechazo(codigo, motivo)  — fin "Venta rechazada (receta inválida)"
+  else Receta válida pero excede 10 piezas o $3,000 MXN
+    Venta-->>VMS: None (estado = PendienteDeAutorización)
+    VMS->>UoW: confirmar()  (queda retenida)
+    VMS-->>Cajero: Resultado(AUTORIZACION_REQUERIDA)
+    Resp->>AVS: otorgar(OtorgarAutorizacionDeVenta, rol = Responsable)
+    AVS->>Venta: otorgar_autorizacion(Autorizacion)
+    Note right of Venta: Autorizacion exige rol Responsable de farmacia (BN-10),<br/>con rol Cajero lanza RolSinPermiso
+    AVS-->>Resp: Resultado.ok
+    Cajero->>VMS: confirmar_cobro(ConfirmarCobro)
+    VMS->>Venta: confirmar_cobro(hoy, limites)
+    Venta-->>VMS: Ticket
+    VMS->>Inv: descontar(lote, cantidad, hoy)
+    VMS->>UoW: confirmar()  (COMMIT)
+    VMS-->>Cajero: Resultado.ok(folio, total)
+  end

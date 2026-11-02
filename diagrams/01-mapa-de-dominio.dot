@@ -1,0 +1,96 @@
+digraph dominio {
+  graph [rankdir=LR, fontname="DejaVu Sans", fontsize=16, nodesep=0.28, ranksep=0.7, pad=0.3, compound=true,
+         labelloc=t, label="FarmaExpress — Mapa de dominio (Aggregates, Entidades, Value Objects, Domain Services y Domain Events)"];
+  node [fontname="DejaVu Sans", fontsize=11, style="filled", margin="0.12,0.07"];
+  edge [fontname="DejaVu Sans", fontsize=9, color="#334155"];
+
+  // ---- leyenda ----
+  subgraph cluster_ley { label="Leyenda"; style="rounded"; color="#9ca3af"; fontsize=11;
+    l1 [label="Aggregate Root", shape=box, fillcolor="#1d4ed8", fontcolor=white, color="#1e3a8a"];
+    l2 [label="Entidad interna", shape=box, fillcolor="#93c5fd", color="#1e3a8a"];
+    l3 [label="Value Object", shape=box, style="filled,rounded", fillcolor="#dcfce7", color="#15803d"];
+    l4 [label="Domain Event", shape=ellipse, fillcolor="#fde68a", color="#b45309"];
+    l5 [label="Domain Service", shape=hexagon, fillcolor="#e9d5ff", color="#7e22ce"];
+    l1 -> l2 -> l3 -> l4 -> l5 [style=invis];
+  }
+
+  // ---- Venta ----
+  subgraph cluster_venta { label=<<B>Aggregate Venta</B><BR/><FONT POINT-SIZE="9">límite de consistencia: invariantes I1–I4 (receta, autorización, sustitución, inmutabilidad)</FONT>>; style="rounded,filled"; fillcolor="#eff6ff"; color="#1d4ed8"; penwidth=2;
+    Venta [label=<<B>Venta</B><BR/><FONT POINT-SIZE="9">raíz · EnCaptura / PendienteDeAutorización<BR/>/ Cobrada / Rechazada</FONT>>, shape=box, fillcolor="#1d4ed8", fontcolor=white, color="#1e3a8a"];
+    LineaDeVenta [label=<<B>LineaDeVenta</B><BR/><FONT POINT-SIZE="9">sku, lote, cantidad, precio</FONT>>, shape=box, fillcolor="#93c5fd", color="#1e3a8a"];
+    Receta [label=<<B>Receta</B><BR/><FONT POINT-SIZE="9">paciente, médico, cédula,<BR/>fecha emisión (vigencia 30 d)</FONT>>, shape=box, style="filled,rounded", fillcolor="#dcfce7", color="#15803d"];
+    Autorizacion [label=<<B>Autorizacion</B><BR/><FONT POINT-SIZE="9">tipo, quién, rol, fecha</FONT>>, shape=box, style="filled,rounded", fillcolor="#dcfce7", color="#15803d"];
+    Ticket [label=<<B>Ticket</B><BR/><FONT POINT-SIZE="9">folio, total, fecha</FONT>>, shape=box, style="filled,rounded", fillcolor="#dcfce7", color="#15803d"];
+    VentaCobrada [label="VentaCobrada", shape=ellipse, fillcolor="#fde68a", color="#b45309"];
+    VentaRechazada [label="VentaRechazada", shape=ellipse, fillcolor="#fde68a", color="#b45309"];
+    VentaRetenida [label="VentaRetenidaPor\nAutorizacion", shape=ellipse, fillcolor="#fde68a", color="#b45309"];
+    SustAceptada [label="SustitucionAceptada", shape=ellipse, fillcolor="#fde68a", color="#b45309"];
+    Venta -> LineaDeVenta [arrowhead=diamond, label="1..*"];
+    Venta -> Receta [arrowhead=diamond, label="0..1"];
+    Venta -> Autorizacion [arrowhead=diamond, label="0..*"];
+    Venta -> Ticket [arrowhead=diamond, label="0..1"];
+    Venta -> VentaCobrada [style=dotted, color="#b45309"];
+    Venta -> VentaRechazada [style=dotted, color="#b45309"];
+    Venta -> VentaRetenida [style=dotted, color="#b45309"];
+    Venta -> SustAceptada [style=dotted, color="#b45309"];
+  }
+
+  // ---- Lote ----
+  subgraph cluster_lote { label=<<B>Aggregate Lote (global)</B><BR/><FONT POINT-SIZE="9">un solo registro → bloqueo en todas las sucursales</FONT>>; style="rounded,filled"; fillcolor="#eff6ff"; color="#1d4ed8"; penwidth=2;
+    Lote [label=<<B>Lote</B><BR/><FONT POINT-SIZE="9">raíz · Disponible / Retirado / Caducado<BR/>(SKU + NumeroDeLote, fecha de caducidad)</FONT>>, shape=box, fillcolor="#1d4ed8", fontcolor=white, color="#1e3a8a"];
+    LoteRetirado [label="LoteRetirado", shape=ellipse, fillcolor="#fde68a", color="#b45309"];
+    LoteCaducado [label="LoteMarcadoComoCaducado", shape=ellipse, fillcolor="#fde68a", color="#b45309"];
+    Lote -> LoteRetirado [style=dotted, color="#b45309"];
+    Lote -> LoteCaducado [style=dotted, color="#b45309"];
+  }
+
+  // ---- Inventario ----
+  subgraph cluster_inv { label=<<B>Aggregate InventarioDeProducto</B><BR/><FONT POINT-SIZE="9">una sucursal + un SKU · invariante: existencia ≥ 0</FONT>>; style="rounded,filled"; fillcolor="#eff6ff"; color="#1d4ed8"; penwidth=2;
+    Inventario [label=<<B>InventarioDeProducto</B><BR/><FONT POINT-SIZE="9">raíz · existencia por lote</FONT>>, shape=box, fillcolor="#1d4ed8", fontcolor=white, color="#1e3a8a"];
+    Niveles [label=<<B>NivelesDeInventario</B><BR/><FONT POINT-SIZE="9">punto de reorden (mínimo), máximo</FONT>>, shape=box, style="filled,rounded", fillcolor="#dcfce7", color="#15803d"];
+    ExistBajo [label="ExistenciaBajoMinimo", shape=ellipse, fillcolor="#fde68a", color="#b45309"];
+    Agotado [label="ProductoAgotado", shape=ellipse, fillcolor="#fde68a", color="#b45309"];
+    Inventario -> Niveles [arrowhead=diamond];
+    Inventario -> ExistBajo [style=dotted, color="#b45309"];
+    Inventario -> Agotado [style=dotted, color="#b45309"];
+  }
+
+  // ---- Producto ----
+  subgraph cluster_prod { label=<<B>Aggregate Producto (catálogo)</B>>; style="rounded,filled"; fillcolor="#eff6ff"; color="#1d4ed8"; penwidth=2;
+    Producto [label=<<B>Producto</B><BR/><FONT POINT-SIZE="9">raíz · SKU, ¿controlado?,<BR/>proveedor, sustitutos equivalentes</FONT>>, shape=box, fillcolor="#1d4ed8", fontcolor=white, color="#1e3a8a"];
+    Dinero [label=<<B>Dinero · Sku</B>>, shape=box, style="filled,rounded", fillcolor="#dcfce7", color="#15803d"];
+    Producto -> Dinero [arrowhead=diamond];
+  }
+
+  // ---- Resurtido ----
+  subgraph cluster_res { label=<<B>Aggregates de Resurtido</B>>; style="rounded,filled"; fillcolor="#eff6ff"; color="#1d4ed8"; penwidth=2;
+    Alerta [label=<<B>AlertaDeResurtido</B><BR/><FONT POINT-SIZE="9">raíz · Pendiente / Atendida<BR/>sucursal, SKU, cantidad sugerida</FONT>>, shape=box, fillcolor="#1d4ed8", fontcolor=white, color="#1e3a8a"];
+    Orden [label=<<B>OrdenDeCompra</B><BR/><FONT POINT-SIZE="9">raíz · Borrador / Confirmada<BR/>(un solo proveedor)</FONT>>, shape=box, fillcolor="#1d4ed8", fontcolor=white, color="#1e3a8a"];
+    LineaOrden [label=<<B>LineaDeOrden</B>>, shape=box, style="filled,rounded", fillcolor="#dcfce7", color="#15803d"];
+    AlertaGen [label="AlertaDeResurtidoGenerada", shape=ellipse, fillcolor="#fde68a", color="#b45309"];
+    OCConf [label="OrdenDeCompraConfirmada", shape=ellipse, fillcolor="#fde68a", color="#b45309"];
+    Orden -> LineaOrden [arrowhead=diamond];
+    Alerta -> AlertaGen [style=dotted, color="#b45309"];
+    Orden -> OCConf [style=dotted, color="#b45309"];
+  }
+
+  // ---- Servicios de dominio / VOs de política ----
+  Seleccion [label=<<B>SeleccionDeLote</B><BR/><FONT POINT-SIZE="9">Domain Service · política FEFO intercambiable<BR/>(cruza Lote + InventarioDeProducto)</FONT>>, shape=hexagon, fillcolor="#e9d5ff", color="#7e22ce"];
+  Limites [label=<<B>LimitesDeVentaControlada</B><BR/><FONT POINT-SIZE="9">10 piezas / $3,000 MXN</FONT>>, shape=box, style="filled,rounded", fillcolor="#dcfce7", color="#15803d"];
+
+  // ---- Referencias entre aggregates: SÓLO por identidad ----
+  Venta -> Lote [style=dashed, label="ref. por SKU + lote", constraint=false];
+  Venta -> Producto [style=dashed, label="ref. por SKU", constraint=false];
+  Inventario -> Lote [style=dashed, label="ref. por lote", constraint=false];
+  Alerta -> Inventario [style=dashed, label="sucursal + SKU", constraint=false];
+  Orden -> Alerta [style=dashed, label="agrupa alertas", constraint=false];
+  Seleccion -> Lote [style=dashed, constraint=false];
+  Seleccion -> Inventario [style=dashed, constraint=false];
+  Limites -> Venta [style=dashed, label="regla de límite", constraint=false];
+
+  // ---- Reacciones a eventos (consumidores) ----
+  Resurtido [label="ResurtidoService\n(Application Service)", shape=box, style="filled,dashed", fillcolor="#ffedd5", color="#c2410c"];
+  Almacen [label="Notificar a Almacén\n(RetiroDeLoteService)", shape=box, style="filled,dashed", fillcolor="#ffedd5", color="#c2410c"];
+  ExistBajo -> Resurtido [color="#b45309", label="reacciona", constraint=false];
+  LoteRetirado -> Almacen [color="#b45309", label="reacciona", constraint=false];
+}

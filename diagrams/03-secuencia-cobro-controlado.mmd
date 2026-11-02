@@ -1,0 +1,33 @@
+%%{init: {'theme':'base','themeVariables':{'fontSize':'14px'}}}%%
+sequenceDiagram
+  autonumber
+  actor Cajero
+  participant VMS as VentaMostradorService
+  participant UoW as UnidadDeTrabajo
+  participant Venta as Venta (Aggregate)
+  participant Lote as Lote (Aggregate)
+  participant Inv as InventarioDeProducto (Aggregate)
+  participant Bus as BusDeEventosEnMemoria
+  participant RS as ResurtidoService
+
+  Note over Cajero,RS: CU-02 flujo normal — medicamento controlado, receta válida, dentro de límites
+  Cajero->>VMS: confirmar_cobro(ConfirmarCobro)
+  VMS->>UoW: BEGIN (with uow)
+  VMS->>UoW: ventas.obtener(venta_id)
+  UoW-->>VMS: Venta
+  loop cada LineaDeVenta (BPMN: verificar lote y caducidad)
+    VMS->>Lote: verificar_vendible(hoy)
+    Lote-->>VMS: ok
+  end
+  VMS->>Venta: confirmar_cobro(hoy, LimitesDeVentaControlada)
+  Note right of Venta: I1 receta completa y vigente<br/>I2 dentro de 10 pzas / $3,000
+  Venta-->>VMS: Ticket (estado = Cobrada)
+  loop cada LineaDeVenta
+    VMS->>Inv: descontar(lote, cantidad, hoy)
+    Note right of Inv: cruza el mínimo → registra<br/>ExistenciaBajoMinimo
+  end
+  VMS->>UoW: confirmar()  (COMMIT: Venta + Inventario)
+  UoW->>Bus: publicar(VentaCobrada, ExistenciaBajoMinimo)
+  VMS-->>Cajero: Resultado.ok(folio, total)
+  Bus->>RS: generar_alerta_de_resurtido(ExistenciaBajoMinimo)
+  Note over RS: nueva UnidadDeTrabajo → AlertaDeResurtido<br/>(si falla, la venta ya está cobrada)

@@ -1,0 +1,15 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.coverage.run]
+source = ["src"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+# Código heredado de la Unidad 3: se mantienen estas dos reglas desactivadas
+# (variables 'l' en comprensiones y comentarios largos en línea).
+ignore = ["E501", "E741"]

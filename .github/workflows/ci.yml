@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint (Ruff)
+        run: ruff check src tests
+
+      - name: Pruebas y cobertura minima 80%
+        run: pytest -v --cov=src --cov-report=term-missing --cov-fail-under=80
+
+      - name: Compilar
+        run: python -m compileall -q src

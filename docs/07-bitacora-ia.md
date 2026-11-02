@@ -1,0 +1,19 @@
+# Bitácora de uso de IA
+
+> **Nota de integridad:** esta bitácora registra lo que realmente ocurrió en la sesión de trabajo con la IA. La columna **"Decisión del equipo"** debe ser **confirmada o ajustada por los integrantes** antes de la revisión; cada uno debe poder explicar y defender estas decisiones sin leer la respuesta generada.
+
+| Iteración | Objetivo | Prompt o enlace | Respuesta útil | Error o supuesto detectado | Decisión del equipo |
+|---|---|---|---|---|---|
+| 1 | Convertir los entregables de U2 (BRD, historias, BPMN, glosario) en casos de uso, comparación de patrones y mapa de dominio. | Se adjuntó la actividad de U3 y los 4 PDF de U2 con el mensaje: *"Mi caso es FarmaExpress… ayúdame realizando esta nueva actividad"*. | 5 casos de uso (CU-01…CU-05), tabla comparativa y propuesta de Domain Model con 6 Aggregates. | **Supuestos** que la IA tuvo que declarar: política FEFO, vigencia de 30 días, "sucursales cercanas" = todas, Receta como Value Object. Inconsistencias de U2 → `06-hallazgos-u2.md`. | ☐ Confirmar o ajustar los supuestos con el profesor/stakeholder. |
+| 2 | Producir diagramas fuente legibles (dominio, clases, 2 secuencias). | Mismo hilo; diagramas generados como código (Mermaid y Graphviz). | Secuencias en Mermaid; mapa de dominio y diagrama de clases por capas en Graphviz. | **Error:** el diagrama de clases en Mermaid con `namespace` salió ilegible (≈5,600 px de ancho) y el mapa de dominio tenía flechas cruzadas. | ☐ Se reemplazaron por Graphviz (`.dot`) manteniendo Mermaid sólo para secuencias. Revisar que los nombres coincidan con el código. |
+| 3 | Código base y pruebas por caso de uso. | Mismo hilo. | Estructura `dominio / aplicacion / infraestructura`, repositorios en memoria y 17 pruebas. | **Error de datos de prueba:** una prueba falló porque el lote usado caducaba a 100 días (fuera del umbral de 90). Se corrigió el dato de prueba, no la regla. | ☐ Revisar que cada prueba verifique una historia (ver trazabilidad). |
+| 4 | Revisión SOLID del diseño. | Mismo hilo. | 7 hallazgos (ver `04-revision-solid.md`). | **Hallazgo real:** los repositorios en memoria lanzaban `KeyError` (violación de LSP) → se introdujo `EntidadNoEncontrada` y 4 pruebas de arquitectura (21 en total). | ☐ Aceptar el hallazgo de `UnidadDeTrabajo` que expone los 6 repositorios (mejora futura). |
+| 5 | Revisar el paquete contra la rúbrica de la actividad (01–04) y prepararlo para GitHub. | Nuevo hilo: se adjuntó el `.zip` con la petición de mejorar lo que faltara y subirlo a GitHub. | Se re-ejecutaron las 21 pruebas (pasan). Se agregó **Active Record** a la tabla comparativa (la actividad dice "Transaction Script, Domain Model, etc."), el evento `ProductoAgotado` que faltaba en la tabla de eventos, el índice de ADR, la galería de diagramas en el README y `.gitignore`/`requirements-dev.txt`. Al comparar con la guía se vio que faltaba la **Etapa 9 (validar la propuesta)** → se agregó `08-validacion-de-propuesta.md`. | **Error de empaquetado:** el zip traía una carpeta basura `{docs` (resto de un `mkdir` con llaves) → eliminada. **Inconsistencia:** la secuencia 1 decía `BusDeEventos` y el diagrama de clases `BusDeEventosEnMemoria` → se renombró y se regeneró el PNG. | ☐ Confirmar los cambios antes de la revisión. |
+
+## Qué debe poder defender cada integrante
+1. Por qué Domain Model y no Transaction Script, con 3 evidencias de U2.
+2. Por qué `Lote` es un Aggregate global y no parte del inventario por sucursal (ADR-002).
+3. Por qué la Unit of Work abarca Venta e Inventario, y qué pasa si falla (ADR-003).
+4. Qué regla vive en el dominio y no en el servicio (p. ej. receta vencida, límite de piezas).
+5. Qué consecuencia negativa se aceptó (más clases, riesgo de perder alertas sin *outbox*).
+6. Qué propuesta de la IA se corrigió (Mermaid ilegible, `KeyError`, datos de prueba).
