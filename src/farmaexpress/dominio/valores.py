@@ -84,7 +84,7 @@ class Receta:
     medico: str
     cedula_profesional: str
     fecha_emision: date | None
-    VIGENCIA_EN_DIAS = 20
+    VIGENCIA_EN_DIAS = 30
 
     def faltantes(self) -> list[str]:
         campos = {
