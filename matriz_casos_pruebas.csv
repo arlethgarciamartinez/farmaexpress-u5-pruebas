@@ -1,0 +1,36 @@
+﻿id,regla,descripcion,tipo,capa,prueba,estado
+CP-01,R1 Receta vigente,receta de 10 días: se cobra y se emite ticket.,Éxito,Dominio,tests/test_regla_receta_vigente.py::test_controlled_sale_with_recent_prescription_is_charged,PASA
+CP-02,R1 Receta vigente,30 días exactos todavía es vigente (US-03 dice 'supera' los 30).,Límite,Dominio,tests/test_regla_receta_vigente.py::test_prescription_of_exactly_30_days_is_still_valid,PASA
+CP-03,R1 Receta vigente,"31 días: receta vencida, la venta no se cobra.",Límite/Error,Dominio,tests/test_regla_receta_vigente.py::test_prescription_of_31_days_is_rejected_and_sale_is_not_charged,PASA
+CP-04,R1 Receta vigente,sin receta no hay venta de controlados (restricción del BRD).,Error,Dominio,tests/test_regla_receta_vigente.py::test_controlled_sale_without_prescription_is_rejected,PASA
+CP-05,R1 Receta vigente,receta sin médico: se indica qué falta.,Error,Dominio,tests/test_regla_receta_vigente.py::test_incomplete_prescription_reports_the_missing_field,PASA
+CP-06,R1 Receta vigente,un producto sin restricción se cobra sin receta (US-01).,Éxito,Dominio,tests/test_regla_receta_vigente.py::test_non_controlled_product_does_not_need_prescription,PASA
+CP-07,R2 Límite de venta controlada,"5 piezas x $400 = $2,000: no necesita autorización.",Éxito,Dominio,tests/test_regla_limite_venta_controlada.py::test_controlled_sale_below_both_limits_is_charged,PASA
+CP-08,R2 Límite de venta controlada,"10 piezas x $300 = $3,000 exactos: US-04 dice 'supera', no 'iguala'.",Límite,Dominio,tests/test_regla_limite_venta_controlada.py::test_sale_exactly_at_10_pieces_and_3000_pesos_is_charged_without_authorization,PASA
+CP-09,R2 Límite de venta controlada,11 piezas: la venta queda retenida y NO se cobra.,Error,Dominio,tests/test_regla_limite_venta_controlada.py::test_sale_of_11_pieces_is_held_for_authorization,PASA
+CP-10,R2 Límite de venta controlada,"una pieza de $3,000.01: supera el monto por un centavo.",Límite,Dominio,tests/test_regla_limite_venta_controlada.py::test_sale_of_one_cent_above_3000_is_held_for_authorization,PASA
+CP-11,R2 Límite de venta controlada,con autorización del Responsable la venta retenida se cobra.,Éxito,Dominio,tests/test_regla_limite_venta_controlada.py::test_held_sale_is_charged_after_pharmacist_authorizes,PASA
+CP-12,R2 Límite de venta controlada,20 piezas de un producto SIN restricción no activan el límite.,Límite,Dominio,tests/test_regla_limite_venta_controlada.py::test_limit_only_counts_controlled_products,PASA
+CP-13,R3 Lote vendible,lote vigente: no lanza ninguna excepción.,Éxito,Dominio,tests/test_regla_lote_vendible.py::test_lot_with_200_days_left_is_sellable,PASA
+CP-14,R3 Lote vendible,caduca hoy: todavía se vende (la regla es hoy > fecha de caducidad).,Límite,Dominio,tests/test_regla_lote_vendible.py::test_lot_expiring_today_is_still_sellable,PASA
+CP-15,R3 Lote vendible,un día después de la fecha de caducidad ya no se vende.,Límite/Error,Dominio,tests/test_regla_lote_vendible.py::test_lot_is_not_sellable_the_day_after_it_expires,PASA
+CP-16,R3 Lote vendible,lote retirado por el proveedor o la autoridad.,Error,Dominio,tests/test_regla_lote_vendible.py::test_withdrawn_lot_is_not_sellable,PASA
+CP-17,R3 Lote vendible,"retirar dos veces no duplica el evento (idempotencia, BN-06).",Límite,Dominio,tests/test_regla_lote_vendible.py::test_withdrawing_twice_is_idempotent_and_emits_one_event,PASA
+CP-18,R3 Lote vendible,una autorización de otro tipo no sirve para retirar un lote.,Error,Dominio,tests/test_regla_lote_vendible.py::test_withdrawal_requires_an_authorization_of_the_right_type,PASA
+CP-19,R3 Lote vendible,marcar caducado emite un solo evento aunque se repita.,Límite,Dominio,tests/test_regla_lote_vendible.py::test_expired_lot_is_marked_once_and_emits_one_event,PASA
+CP-20,BN-10 Roles y estados,el Responsable de farmacia puede otorgar cualquier tipo.,Éxito,Dominio (seguridad),tests/test_seguridad_roles_y_estados.py::test_pharmacist_can_grant_every_type_of_authorization,PASA
+CP-21,BN-10 Roles y estados,"Cajero, Compras, Almacén y Gerencia (4 roles x 3 tipos = 12).",Error,Dominio (seguridad),tests/test_seguridad_roles_y_estados.py::test_any_other_role_cannot_grant_authorizations,PASA
+CP-22,BN-10 Roles y estados,invariante I4: una venta cobrada o rechazada ya no cambia.,Error,Dominio (seguridad),tests/test_seguridad_roles_y_estados.py::test_charged_or_rejected_sale_cannot_be_modified,PASA
+CP-23,BN-10 Roles y estados,US-06: sin autorización no se sustituye un controlado.,Error,Dominio (seguridad),tests/test_seguridad_roles_y_estados.py::test_substituting_a_controlled_product_requires_pharmacist_authorization,PASA
+CP-24,Persistencia de lotes,commit: el lote se guarda y una sesión nueva lo lee completo.,Éxito,Integración SQLite,tests/test_persistencia_sqlite.py::test_committed_lot_is_persisted_and_can_be_read_in_a_new_session,PASA
+CP-25,Persistencia de lotes,"sin confirmar, al salir del bloque se hace rollback.",Error,Integración SQLite,tests/test_persistencia_sqlite.py::test_lot_added_without_confirming_is_rolled_back,PASA
+CP-26,Persistencia de lotes,"si algo falla a mitad de la operación, el retiro no queda guardado.",Error,Integración SQLite,tests/test_persistencia_sqlite.py::test_change_made_before_an_exception_is_rolled_back,PASA
+CP-27,Persistencia de lotes,el repositorio SQL cumple el mismo contrato que el de memoria.,Error,Integración SQLite,tests/test_persistencia_sqlite.py::test_missing_lot_raises_the_common_repository_error,PASA
+CP-28,Persistencia de lotes,de_producto no mezcla lotes de otros SKU.,Límite,Integración SQLite,tests/test_persistencia_sqlite.py::test_repository_returns_only_lots_of_the_requested_product,PASA
+CP-29,Persistencia de lotes,CU-04 de punta a punta: el retiro queda guardado en la base.,Éxito,Integración SQLite,tests/test_persistencia_sqlite.py::test_withdrawal_use_case_persists_the_new_state,PASA
+CP-30,Persistencia de lotes,seguridad + persistencia: un Cajero no puede retirar lotes.,Error,Integración SQLite,tests/test_persistencia_sqlite.py::test_withdrawal_by_a_cashier_is_denied_and_nothing_is_saved,PASA
+CP-31,Notificación a Almacén,el servicio externo responde bien: se avisa a Almacén una vez.,Éxito,Mock de servicio externo,tests/test_notificador_almacen_mock.py::test_warehouse_is_notified_when_the_gateway_approves,PASA
+CP-32,Notificación a Almacén,Almacén no responde (ConnectionError): el retiro YA confirmado no se deshace.,Error,Mock de servicio externo,tests/test_notificador_almacen_mock.py::test_withdrawal_is_kept_when_the_warehouse_service_is_down,PASA
+CP-33,Notificación a Almacén,timeout: mismo comportamiento y el error queda registrado.,Límite,Mock de servicio externo,tests/test_notificador_almacen_mock.py::test_withdrawal_is_kept_when_the_warehouse_service_times_out,PASA
+CP-34,Notificación a Almacén,"si el retiro se rechaza por rol, no hay aviso a Almacén.",Error,Mock de servicio externo,tests/test_notificador_almacen_mock.py::test_warehouse_is_not_notified_when_the_role_is_not_allowed,PASA
+CP-35,Notificación a Almacén,el retiro es idempotente: no se avisa dos veces a Almacén.,Límite,Mock de servicio externo,tests/test_notificador_almacen_mock.py::test_withdrawing_an_already_withdrawn_lot_notifies_only_once,PASA
